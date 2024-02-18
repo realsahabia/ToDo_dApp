@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-contract TodoContract {
+contract TaskContract {
     
-    event TaskCreated(address recipient, uint taskId);
+    event TaskCreated(address recipient, uint taskId, string taskText);
     event TaskDeleted(uint taskId, bool isDeleted);
 
     struct Task {
@@ -12,31 +12,32 @@ contract TodoContract {
         bool isDeleted;
     }
 
-    Task [] private tasks; 
-
+    Task[] private tasks; 
     mapping(uint => address) taskToOwner;
 
     function createTask(string memory _taskText, bool isDeleted) external {
         uint taskId = tasks.length;
-        tasks.push(Task(taskId, taskText, isDeleted));
+        tasks.push(Task(taskId, _taskText, isDeleted));
         taskToOwner[taskId] = msg.sender;
 
-        emit TaskCreated(msg.sender, taskId);        
+        emit TaskCreated(msg.sender, taskId, _taskText);        
     }
 
     function getMyTasks() external view returns (Task[] memory){
-        Task[] memory temporary = new Task[](tasks.length);
         uint counter = 0;
-        for(uint i=0; i<tasks.length; i++){
+        for(uint i = 0; i < tasks.length; i++){
             if(taskToOwner[tasks[i].id] == msg.sender && tasks[i].isDeleted == false) {
-                temporary[counter] = tasks[i];
-                counter +=1;  
+                counter++;
             }
         }
 
         Task[] memory result = new Task[](counter);
-        for(i=0; i<counter; i++) {
-            result[i] = temporary[i];
+        counter = 0;
+        for(uint i = 0; i < tasks.length; i++){
+            if(taskToOwner[tasks[i].id] == msg.sender && tasks[i].isDeleted == false) {
+                result[counter] = tasks[i];
+                counter++;
+            }
         }
         return result;
     }
