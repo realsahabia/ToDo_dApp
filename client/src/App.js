@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TextField, Button } from "@mui/material";
 import Task from './Task';
 import './App.css';
@@ -12,6 +12,34 @@ export default function App() {
   const [input, setInput] = useState("");
   const [currentAccount, setCurrentAccount] = useState("");
   const [correctNetwork, setCorrectNetwork] = useState(false);
+
+
+  useEffect(() => {
+    getAllTasks();
+  },[]);
+
+  const getAllTasks = async() =>{
+    try {
+      const {ethereum} = window
+
+      if (ethereum) {
+        const provider = new ethers.BrowserProvider(ethereum)
+        const signer = provider.getSigner();
+        const taskContract = new ethers.Contract(
+          TaskContractAddress,
+          TaskAbi,
+          signer
+        )
+
+        let allTasks = await taskContract.getMyTasks();
+        setTasks(allTasks);
+      }
+
+    } catch(error){
+      console.log(error)
+    }
+  }
+  
 
   const connectWallet = async () => {
     try {
@@ -41,14 +69,59 @@ export default function App() {
     }
   }
 
-  const addTask = () => {
-    // Implement adding task logic here
-    // Update the tasks state with the new task
-  }
+  const addTask = async (e) => {
+    e.preventDefault();
+  
+    let task = {
+      taskText: input,
+      isDeleted: false
+    };
+  
+    try {
+      const {ethereum} = window;
+  
+      if(ethereum) {
+        const provider = new ethers.BrowserProvider(ethereum);
+        const signer = provider.getSigner();
+        const TaskContract = new ethers.Contract(
+          TaskContractAddress,
+          TaskAbi,
+          signer
+        );
+        
+        await TaskContract.addTask(task.taskText, task.isDeleted); 
+        setTasks([...tasks, task]);
+      }
+    } catch(error){
+      console.log(error); // Error handling
+    }
+  
+    setInput("");
+  };  
 
-  const deleteTask = (taskId) => {
-    // Implement deleting task logic here
-    // Remove the task with the given taskId from the tasks state
+  const deleteTask = key => async() => {
+
+    console.log(key)
+
+    try {
+      const {ethereum} = window
+
+      if(ethereum) {
+        const provider = new ethers.BrowserProvider(ethereum)
+        const signer = await provider.getSigner();
+        const taskContract = new ethers.Contract(
+          TaskContractAddress,
+          TaskAbi,
+          signer
+        )
+          
+        let deleteTaskDx = await taskContract.delete(key, true);
+        let allTasks = await taskContract.getMyTasks();
+        setTasks(allTasks);
+      }
+    } catch(error) {
+      console.log(error)
+    }
   }
 
   return (
@@ -77,7 +150,7 @@ export default function App() {
               <form>
                 <TextField id="outlined-basic" label="Make Todo" variant="outlined" style={{ margin: "0px 5px" }} size="small" value={input}
                   onChange={e => setInput(e.target.value)} />
-                <Button variant="contained" color="primary" onClick={() => addTask()}  >Add Task</Button>
+                <Button variant="contained" color="primary" onClick={(e) => addTask(e)}  >Add Task</Button>
               </form>
               <ul>
                 {tasks.map(item =>
@@ -93,7 +166,7 @@ export default function App() {
             // Incorrect network message
             <div className='flex flex-col justify-center items-center mb-20 font-bold text-2xl gap-y-3'>
               <div>----------------------------------------</div>
-              <div>Please connect to the Rinkeby Testnet</div>
+              <div>Please connect to the Arbitrum sepolia test network</div>
               <div>and reload the page</div>
               <div>----------------------------------------</div>
             </div>

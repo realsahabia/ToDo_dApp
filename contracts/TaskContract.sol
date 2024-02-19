@@ -15,6 +15,7 @@ contract TaskContract {
     Task[] private tasks; 
     mapping(uint => address) taskToOwner;
 
+    // function to create new task
     function createTask(string memory _taskText, bool isDeleted) external {
         uint taskId = tasks.length;
         tasks.push(Task(taskId, _taskText, isDeleted));
@@ -23,6 +24,7 @@ contract TaskContract {
         emit TaskCreated(msg.sender, taskId, _taskText);        
     }
 
+    // function to get all tasks
     function getMyTasks() external view returns (Task[] memory){
         uint counter = 0;
         for(uint i = 0; i < tasks.length; i++){
@@ -40,5 +42,13 @@ contract TaskContract {
             }
         }
         return result;
+    }
+
+    // function to Delete a task
+    function deleteTask(uint taskId, bool isDeleted) external {
+        if(taskToOwner[taskId] == msg.sender) {
+            tasks[taskId].isDeleted = isDeleted;
+            emit TaskDeleted(taskId, isDeleted);
+        }
     }
 }
